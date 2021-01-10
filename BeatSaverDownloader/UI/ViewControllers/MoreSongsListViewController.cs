@@ -44,6 +44,10 @@ namespace BeatSaverDownloader.UI.ViewControllers
         public CustomListTableData sortListTableData;
         [UIComponent("sourceList")]
         public CustomListTableData sourceListTableData;
+        [UIComponent("batchTypeList")]
+        public CustomListTableData batchFilterListTableData;
+        [UIComponent("batchNumberList")]
+        public CustomListTableData batchNumberListTableData;
         [UIComponent("loadingModal")]
         public ModalView loadingModal;
         [UIComponent("sortModal")]
@@ -81,6 +85,10 @@ namespace BeatSaverDownloader.UI.ViewControllers
         }
 
         internal bool AllowAIGeneratedMaps = false;
+
+        // Batching
+        public Action<List<Tuple<Beatmap, Sprite>>> BatchDownloadRequested;
+        private Filters.ScoreSaberFilterOptions _batchFilter;
 
         private bool _working;
         private uint lastPage = 0;
@@ -200,6 +208,86 @@ namespace BeatSaverDownloader.UI.ViewControllers
             Working = false;
         }
 
+        [UIAction("batchPressed")]
+        internal void BatchPressed()
+        {
+            batchFilterListTableData.tableView.ClearSelection();
+            batchNumberListTableData.tableView.ClearSelection();
+        }
+        [UIAction("batchFilterSelect")]
+        internal void BatchFilterSelect(TableView tableView, int row)
+        {
+            parserParams.EmitEvent("close-batchFilterModal");
+            _batchFilter = (batchFilterListTableData.data[row] as SortFilterCellInfo).sortFilter.ScoreSaberOption;
+            parserParams.EmitEvent("open-batchNumberModal");
+        }
+        [UIAction("batchNumSelect")]
+        internal void BatchNumSelect(TableView tableView, int row)
+        {
+            parserParams.EmitEvent("close-batchNumberModal");
+            int wantedSongCount = (batchNumberListTableData.data[row] as BatchNumberCellInfo).numberOfSongs;
+            if (wantedSongCount > 0)
+            {
+                ProcessBatchDownload(wantedSongCount, _batchFilter);
+            }
+        }
+
+        internal async void ProcessBatchDownload(int wantedSongCount, Filters.ScoreSaberFilterOptions filterMode)
+        {
+            Plugin.log.Info("Attempting to download (" + wantedSongCount + ") " + _batchFilter + " songs.");
+
+            int wantedPageCount = (int)(wantedSongCount / 20.0f) + 1;
+
+            uint pageToGet = 0;
+            List<ScoreSaberSharp.Song> newMaps = new List<ScoreSaberSharp.Song>();
+            for (uint i = 0; i < wantedPageCount; ++i)
+            {
+                _fetchingDetails = $"({i + 1}/{wantedPageCount})";
+                ScoreSaberSharp.Songs page = null;
+                switch (filterMode)
+                {
+                    case Filters.ScoreSaberFilterOptions.Trending:
+                        page = await ScoreSaberSharp.ScoreSaber.Trending(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+                    case Filters.ScoreSaberFilterOptions.Ranked:
+                        page = await ScoreSaberSharp.ScoreSaber.Ranked(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+                    case Filters.ScoreSaberFilterOptions.Qualified:
+                        page = await ScoreSaberSharp.ScoreSaber.Qualified(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+                    case Filters.ScoreSaberFilterOptions.Loved:
+                        page = await ScoreSaberSharp.ScoreSaber.Loved(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+                    case Filters.ScoreSaberFilterOptions.Plays:
+                        page = await ScoreSaberSharp.ScoreSaber.Plays(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+                    case Filters.ScoreSaberFilterOptions.Difficulty:
+                        page = await ScoreSaberSharp.ScoreSaber.Difficulty(pageToGet, cancellationTokenSource.Token, fetchProgress);
+                        break;
+
+                }
+
+                pageToGet++;
+                if (page.songs == null || page.songs.Count == 0)
+                {
+                    break;
+                }
+
+                newMaps.AddRange(page.songs);
+            }
+
+            List<Tuple<Beatmap, Sprite>> songsToDownload = new List<Tuple<Beatmap, Sprite>>();
+            foreach (var song in newMaps)
+            {
+                Plugin.log.Info("Downloading: " + song.id + ":" + song.name);
+                Tuple<Beatmap, Sprite> newSongTuple = new Tuple<Beatmap, Sprite>(ConstructBeatmapFromScoreSaber(song), null);
+                songsToDownload.Add(newSongTuple);
+            }
+            BatchDownloadRequested?.Invoke(songsToDownload);
+
+            _fetchingDetails = "";
+        }
+
         internal async void SortByUser(BeatSaverSharp.User user)
         {
             _currentUploader = user;
@@ -268,6 +356,8 @@ namespace BeatSaverDownloader.UI.ViewControllers
             _searchKeyboard.keyboard.keys.Add(keyKey);
             _searchKeyboard.keyboard.keys.Add(includeAIKey);
             InitSongList();
+
+            SetupBatchOptions();
         }
 
         internal void IncludeAIKeyPressed(KEYBOARD.KEY key)
@@ -312,6 +402,26 @@ namespace BeatSaverDownloader.UI.ViewControllers
             sourceListTableData.data.Add(new SourceCellInfo(Filters.FilterMode.ScoreSaber, "ScoreSaber", null, Sprites.ScoreSaberIcon));
             sourceListTableData.data.Add(new SourceCellInfo(Filters.FilterMode.BeastSaber, "BeastSaber", null, Sprites.BeastSaberLogoSmall));
             sourceListTableData.tableView.ReloadData();
+        }
+        public void SetupBatchOptions()
+        {
+            batchFilterListTableData.data.Clear();
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Trending), "Trending", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Ranked), "Ranked", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Qualified), "Qualified", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Loved), "Loved", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Difficulty), "Difficulty", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.data.Add(new SortFilterCellInfo(new SortFilter(Filters.FilterMode.ScoreSaber, default, Filters.ScoreSaberFilterOptions.Plays), "Plays", "ScoreSaber", Sprites.ScoreSaberIcon));
+            batchFilterListTableData.tableView.ReloadData();
+
+            batchNumberListTableData.data.Clear();
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(10, "10", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(50, "30", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(50, "50", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(100, "100", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(200, "200", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(2000, "All", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.tableView.ReloadData();
         }
         public void SetupSortOptions()
         {
@@ -653,6 +763,15 @@ namespace BeatSaverDownloader.UI.ViewControllers
             Sprite icon = Misc.Sprites.LoadSpriteRaw(image);
             base.icon = icon;
             _callback(this);
+        }
+    }
+
+    public class BatchNumberCellInfo : CustomListTableData.CustomCellInfo
+    {
+        public int numberOfSongs;
+        public BatchNumberCellInfo(int inNumberOfSongs, string text, string subtext = null, Sprite icon = null) : base(text, subtext, icon)
+        {
+            numberOfSongs = inNumberOfSongs;
         }
     }
 }

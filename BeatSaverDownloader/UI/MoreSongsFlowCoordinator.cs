@@ -33,6 +33,7 @@ namespace BeatSaverDownloader.UI
                 _moreSongsView.didSelectSong += HandleDidSelectSong;
                 _moreSongsView.filterDidChange += HandleFilterDidChange;
                 _moreSongsView.multiSelectDidChange += HandleMultiSelectDidChange;
+                _moreSongsView.BatchDownloadRequested += HandleBatchDownloadRequest;
                 _songDetailView.didPressDownload += HandleDidPressDownload;
                 _songDetailView.didPressUploader += HandleDidPressUploader;
                 _songDetailView.setDescription += _songDescriptionView.Initialize;
@@ -139,6 +140,12 @@ namespace BeatSaverDownloader.UI
                 _moreSongsNavigationcontroller.PushViewController(_moreSongsView, null, true);
             }
         }
+
+        internal void HandleBatchDownloadRequest(System.Collections.Generic.List<Tuple<BeatSaverSharp.Beatmap, Sprite>> requestedSongs)
+		{
+            _downloadQueueView.EnqueueSongs(requestedSongs.ToArray(), _downloadQueueView.cancellationTokenSource.Token);
+        }
+
         internal void HandleDidPressUploader(BeatSaverSharp.User uploader)
         {
             Plugin.log.Info("Uploader pressed for user: " + uploader.Username);

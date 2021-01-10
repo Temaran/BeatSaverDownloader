@@ -14,12 +14,22 @@
       <page-button event-click="sortList#PageDown" pref-width="14" direction="Down"></page-button>
     </vertical>
   </modal>
+	<modal id="batchFilterModal" show-event="open-batchFilterModal" hide-event="close-batchFilterModal,closeAllModals" move-to-center="true" size-delta-y="51" size-delta-x="50" clickerino-offerino-closerino="true">
+		<vertical>
+			<list id="batchTypeList" expand-cell="false" anchor-pos-x="-10" list-width="50" select-cell="batchFilterSelect"></list>
+		</vertical>
+	</modal>
+	<modal id="batchNumberModal" show-event="open-batchNumberModal" hide-event="close-batchNumberModal,closeAllModals" move-to-center="true" size-delta-y="51" size-delta-x="50" clickerino-offerino-closerino="true">
+		<vertical>
+			<list id="batchNumberList" expand-cell="false" anchor-pos-x="-10" list-width="50" select-cell="batchNumSelect"></list>
+		</vertical>
+	</modal>
   <vertical id="interactableGroup">
     <horizontal horizontal-fit="PreferredSize" vertical-fit="PreferredSize" spacing="2" anchor-min-x="0" anchor-max-x="0.5">
       <button  id="multiSelectButton" pad="0" pref-height="8" pref-width="15" text="M-S" on-click="multiSelectToggle"></button>
       <button  id="searchButton" pad="0" pref-height="8" pref-width="20" text="Search" on-click="searchOpened" click-event="open-searchKeyboard" ></button>
       <button id="sortButton" pad="0" pref-height="8" pref-width="20" click-event="open-sourceModal" on-click="sortPressed" text="Sort"></button>
-
+			<button id="batchDownloadButton" pad="0" pref-height="8" pref-width="20" click-event="open-batchFilterModal" on-click="batchPressed" text="Batch"></button>
     </horizontal>
     <modal id="loadingModal" show-event="open-loadingModal" hide-event="close-loadingModal,closeAllModals" move-to-center="true" size-delta-y="35" size-delta-x="48">
       <button id="abortButton" on-click="abortClicked" text="Abort" ignore-layout="true" anchor-min-x="0.5" anchor-max-x="0.5" anchor-pos-y="5" pref-height="8" pad="0" ></button>
