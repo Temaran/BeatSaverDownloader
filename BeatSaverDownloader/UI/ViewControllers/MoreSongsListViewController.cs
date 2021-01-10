@@ -280,7 +280,7 @@ namespace BeatSaverDownloader.UI.ViewControllers
             foreach (var song in newMaps)
             {
                 Plugin.log.Info("Downloading: " + song.id + ":" + song.name);
-                Tuple<Beatmap, Sprite> newSongTuple = new Tuple<Beatmap, Sprite>(ConstructBeatmapFromScoreSaber(song), null);
+                Tuple<Beatmap, Sprite> newSongTuple = new Tuple<Beatmap, Sprite>(ConstructBeatmapFromScoreSaber(song), Sprites.DownloadIcon);
                 songsToDownload.Add(newSongTuple);
             }
             BatchDownloadRequested?.Invoke(songsToDownload);
