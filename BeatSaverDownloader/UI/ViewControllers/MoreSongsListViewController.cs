@@ -420,6 +420,7 @@ namespace BeatSaverDownloader.UI.ViewControllers
             batchNumberListTableData.data.Add(new BatchNumberCellInfo(50, "50", "Songs", Sprites.ScoreSaberIcon));
             batchNumberListTableData.data.Add(new BatchNumberCellInfo(100, "100", "Songs", Sprites.ScoreSaberIcon));
             batchNumberListTableData.data.Add(new BatchNumberCellInfo(200, "200", "Songs", Sprites.ScoreSaberIcon));
+            batchNumberListTableData.data.Add(new BatchNumberCellInfo(500, "500", "Songs", Sprites.ScoreSaberIcon));
             batchNumberListTableData.data.Add(new BatchNumberCellInfo(2000, "All", "Songs", Sprites.ScoreSaberIcon));
             batchNumberListTableData.tableView.ReloadData();
         }

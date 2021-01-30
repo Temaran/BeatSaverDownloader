@@ -19,7 +19,7 @@
 			<list id="batchTypeList" expand-cell="false" anchor-pos-x="-10" list-width="50" select-cell="batchFilterSelect"></list>
 		</vertical>
 	</modal>
-	<modal id="batchNumberModal" show-event="open-batchNumberModal" hide-event="close-batchNumberModal,closeAllModals" move-to-center="true" size-delta-y="51" size-delta-x="50" clickerino-offerino-closerino="true">
+	<modal id="batchNumberModal" show-event="open-batchNumberModal" hide-event="close-batchNumberModal,closeAllModals" move-to-center="true" size-delta-y="60" size-delta-x="50" clickerino-offerino-closerino="true">
 		<vertical>
 			<list id="batchNumberList" expand-cell="false" anchor-pos-x="-10" list-width="50" select-cell="batchNumSelect"></list>
 		</vertical>
